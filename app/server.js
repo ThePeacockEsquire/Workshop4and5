@@ -93,7 +93,7 @@ export function postStatusUpdate(user, location, contents, cb) {
  * Adds a new comment to the database on the given feed item.
  * Returns the updated FeedItem object.
  */
-export function postComment(feedItemId, author, contents, cb) {
+export function postComment(feedItemId, author, likeCounter, contents, cb) {
   // Since a CommentThread is embedded in a FeedItem object,
   // we don't have to resolve it. Read the document,
   // update the embedded object, and then update the
@@ -102,7 +102,8 @@ export function postComment(feedItemId, author, contents, cb) {
   feedItem.comments.push({
     "author": author,
     "contents": contents,
-    "postDate": new Date().getTime()
+    "postDate": new Date().getTime(),
+    "likeCounter": likeCounter
   });
   writeDocument('feedItems', feedItem);
   // Return a resolved version of the feed item so React can
@@ -142,4 +143,16 @@ export function unlikeFeedItem(feedItemId, userId, cb) {
   }
   // Return a resolved version of the likeCounter
   emulateServerReturn(feedItem.likeCounter.map((userId) => readDocument('users', userId)), cb);
+}
+
+export function likeCommentItem(feedItemId, userId, commentIndex, cb) {
+  var feedItem = readDocument('feedItems', feedItemId);
+  var comment = feedItem.comments[commentIndex];
+  // Normally, we would check if the user already liked this comment.
+  // But we will not do that in this mock server.
+  // ('push' modifies the array by adding userId to the end)
+  comment.likeCounter.push(userId);
+  writeDocument('comments', comment);
+  // Return a resolved version of the likeCounter
+  emulateServerReturn(comment.likeCounter.map((userId) => readDocument('users', userId)), cb);
 }
